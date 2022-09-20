@@ -1,6 +1,7 @@
 ﻿using AntDesign;
 using AzureDesignStudio.Models;
 using AzureDesignStudio.SharedModels.Protos;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -30,7 +31,9 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private bool _paramFormLoading = true;
         private bool _showDeployStatus = false;
         private StepsStatus _stepsStatus = new();
+        private AuthenticationState _authState;
         private Button UploadToGitButton;
+        
 
 
         #region Button style and download
@@ -46,8 +49,8 @@ namespace AzureDesignStudio.Components.MenuDrawer
 
             if (_drawerContent.Type == CodeDrawerContentType.Json)
             {
-                var authState = await authenticationStateTask;
-                var user = authState.User;
+                _authState = await authenticationStateTask;
+                var user = _authState.User;
                 if (user.Identity?.IsAuthenticated ?? false)
                 {
                     var subscriptions = await _deployService.GetLinkedSubscriptions();
@@ -109,7 +112,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private async Task UploaddFileAsync(string content, string filePath)
         {
             var gitHubClient = new GitHubClient(new ProductHeaderValue("AzureDesignStudio"));
-            gitHubClient.Credentials = new Credentials("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");
+            gitHubClient.Credentials = new Credentials("");
 
             var (owner, repoName, branch) = ("VictorM88", "Testing", "main");
 

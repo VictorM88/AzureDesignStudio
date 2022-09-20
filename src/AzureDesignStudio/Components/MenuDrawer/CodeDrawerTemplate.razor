@@ -15,8 +15,11 @@
                 <span>Deploy</span>
             </Button>
         }
-        <Button Icon="download" OnClick="HandleDownload">Download</Button>
-        <Button Icon="upload" OnClick="HandleUpload" @ref="UploadToGitButton">Upload to GitHub</Button>
+        <Button Icon="download" OnClick="HandleDownload">Download</Button>       
+        @if (_authState.User.Identity?.IsAuthenticated ?? false)
+        {
+            <Button Icon="upload" OnClick="HandleUpload" @ref="UploadToGitButton">Upload to GitHub</Button>
+        }        
     </div>
 </Affix>
 <pre><code class="@_codeClass">
