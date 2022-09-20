@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="6.0.8" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.2-mauipre.1.22054.8" />
     <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="6.0.2-mauipre.1.22054.8" />
+    <PackageReference Include="Octokit" Version="3.0.0" />
     <PackageReference Include="System.Text.Encoding" Version="4.3.0" />
   </ItemGroup>
 

@@ -4,6 +4,7 @@
 @inherits FeedbackComponent<CodeDrawerContent, string>
 @inject IJSRuntime JS
 @inject DeployGrpcService _deployService
+@inject IMessageService _message
 
 <Affix TargetSelector=".ant-drawer-body" OnChange="HandleAffixChange">
     <div style="@_buttonStyle">
@@ -15,6 +16,7 @@
             </Button>
         }
         <Button Icon="download" OnClick="HandleDownload">Download</Button>
+        <Button Icon="upload" OnClick="HandleUpload" @ref="UploadToGitButton">Upload to GitHub</Button>
     </div>
 </Affix>
 <pre><code class="@_codeClass">

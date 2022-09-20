@@ -4,6 +4,7 @@ using AzureDesignStudio.SharedModels.Protos;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Octokit;
 using System.Text;
 
 namespace AzureDesignStudio.Components.MenuDrawer
@@ -29,6 +30,8 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private bool _paramFormLoading = true;
         private bool _showDeployStatus = false;
         private StepsStatus _stepsStatus = new();
+        private Button UploadToGitButton;
+
 
         #region Button style and download
         protected override async Task OnInitializedAsync()
@@ -80,23 +83,67 @@ namespace AzureDesignStudio.Components.MenuDrawer
 
         async Task HandleDownload()
         {
-            var filename = _drawerContent.Type switch
-            {
-                CodeDrawerContentType.Json => "azure-design-studio.json",
-                CodeDrawerContentType.Bicep => "azure-design-studio.bicep",
-                _ => "azure-design-studio.json"
-            };
-
-            await DownloadFile(_drawerContent.Content, filename, "application/json");
+            await DownloadFileAsync(_drawerContent.Content, GetFileName(), "application/json");
         }
 
         // According to: https://docs.microsoft.com/en-us/aspnet/core/blazor/file-downloads?view=aspnetcore-6.0
-        private async Task DownloadFile(string content, string filename, string contentType)
+        private async Task DownloadFileAsync(string content, string filename, string contentType)
         {
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
             using var streamRef = new DotNetStreamReference(stream);
             await JS.InvokeVoidAsync("downloadFileFromStream", filename, contentType, streamRef);
         }
+
+
+        async Task HandleUpload()
+        {
+            UploadToGitButton.Disabled = true;
+            _message.Info("Uploading to GitHub");
+
+            await UploaddFileAsync(_drawerContent.Content, $"configs/{GetFileName()}").ConfigureAwait(false);
+
+            UploadToGitButton.Disabled = false;
+            _message.Info("Upload complete");
+        }
+
+        private async Task UploaddFileAsync(string content, string filePath)
+        {
+            var gitHubClient = new GitHubClient(new ProductHeaderValue("AzureDesignStudio"));
+            gitHubClient.Credentials = new Credentials("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");
+
+            var (owner, repoName, branch) = ("VictorM88", "Testing", "main");
+
+            try
+            {
+                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, repoName, filePath, branch);
+                await gitHubClient.Repository.Content.UpdateFile(
+                    owner,
+                    repoName,
+                    filePath,
+                    new UpdateFileRequest($"Updating config {filePath}", content, fileDetails.Last().Sha)
+                    );
+            }
+            catch (NotFoundException)
+            {
+                await gitHubClient.Repository.Content.CreateFile(
+                    owner,
+                    repoName,
+                    filePath,
+                    new CreateFileRequest($"Creating config {filePath}", content, branch)
+                    );
+            }            
+        }
+
+        private string GetFileName()
+        {
+            return _drawerContent.Type switch
+            {
+                CodeDrawerContentType.Json => "azure-design-studio.json",
+                CodeDrawerContentType.Bicep => "azure-design-studio.bicep",
+                _ => "azure-design-studio.json"
+            };
+        }
+
         #endregion
 
         async Task HandleDeploy()
@@ -137,7 +184,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
             // TODO: work on the parameters.
             await _deployService.CreateDeployment(_linkedSubscription!.SubscriptionId,
                 _deployParams.ResourceGroup, _drawerContent.Content, "{}",
-                async (deploymentStatus, errorMessage) => 
+                async (deploymentStatus, errorMessage) =>
                 {
                     var stateHasChanged = false;
 
