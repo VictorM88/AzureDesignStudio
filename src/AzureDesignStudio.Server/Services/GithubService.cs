@@ -24,7 +24,8 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<UploadGithubResponse> Upload(UploadGithubRequest request, ServerCallContext context)
         {
-            var owner = "VictorM88";
+            var githubUser = await gitHubClient.User.Current().ConfigureAwait(false);
+            var owner = githubUser.Login;
 
             try
             {
