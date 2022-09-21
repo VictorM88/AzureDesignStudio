@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,12 +83,13 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseGrpcWeb();
+app.UseGrpcWeb(); 
 app.MapGrpcService<DesignService>().EnableGrpcWeb();
 app.MapGrpcService<DeployService>().EnableGrpcWeb();
-
+app.MapGrpcService<GithubService>().EnableGrpcWeb();
+IdentityModelEventSource.ShowPII = true;
 #if DEBUG
-    if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
     {
         app.MapGrpcReflectionService();
     }

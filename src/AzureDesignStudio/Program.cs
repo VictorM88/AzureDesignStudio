@@ -52,6 +52,17 @@ builder.Services.AddGrpcClient<Deploy.DeployClient>("DeployClientWithAuth", o =>
     return new GrpcWebHandler(GrpcWebMode.GrpcWeb, baseAddressMessageHandler);
 });
 
+builder.Services.AddScoped<GithubGrpService>();
+builder.Services.AddGrpcClient<Github.GithubClient>("GithubClientWithAuth", o =>
+{
+    o.Address = new Uri(builder.HostEnvironment.BaseAddress);
+}).ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var baseAddressMessageHandler = builder.Services.BuildServiceProvider().GetRequiredService<BaseAddressAuthorizationMessageHandler>();
+    baseAddressMessageHandler.InnerHandler = new HttpClientHandler();
+    return new GrpcWebHandler(GrpcWebMode.GrpcWeb, baseAddressMessageHandler);
+});
+
 
 builder.Services.AddAntDesign();
 builder.Services.AddSingleton<AdsContext>();

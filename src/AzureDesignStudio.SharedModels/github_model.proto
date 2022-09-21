@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "AzureDesignStudio.SharedModels.Protos";
+
+import "google/protobuf/empty.proto";
+
+service Github {
+	rpc Upload(UploadGithubRequest) returns(UploadGithubResponse);;	
+}
+
+message UploadGithubResponse {
+	bool succeeded = 1;
+}
+
+message UploadGithubRequest {
+	string filePath = 1;
+	string content = 2;	
+}

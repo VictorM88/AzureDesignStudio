@@ -33,7 +33,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private StepsStatus _stepsStatus = new();
         private AuthenticationState _authState;
         private Button UploadToGitButton;
-        
+
 
 
         #region Button style and download
@@ -103,38 +103,14 @@ namespace AzureDesignStudio.Components.MenuDrawer
             UploadToGitButton.Disabled = true;
             _message.Info("Uploading to GitHub");
 
-            await UploaddFileAsync(_drawerContent.Content, $"configs/{GetFileName()}").ConfigureAwait(false);
+            var succeeded = await _githubService.UploadContent($"configs/{GetFileName()}", _drawerContent.Content).ConfigureAwait(false);
+
+            if (succeeded)
+                _message.Info("Upload complete");
+            else
+                _message.Error("Something went wrong. Try again.");
 
             UploadToGitButton.Disabled = false;
-            _message.Info("Upload complete");
-        }
-
-        private async Task UploaddFileAsync(string content, string filePath)
-        {
-            var gitHubClient = new GitHubClient(new ProductHeaderValue("AzureDesignStudio"));
-            gitHubClient.Credentials = new Credentials("");
-
-            var (owner, repoName, branch) = ("VictorM88", "Testing", "main");
-
-            try
-            {
-                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, repoName, filePath, branch);
-                await gitHubClient.Repository.Content.UpdateFile(
-                    owner,
-                    repoName,
-                    filePath,
-                    new UpdateFileRequest($"Updating config {filePath}", content, fileDetails.Last().Sha)
-                    );
-            }
-            catch (NotFoundException)
-            {
-                await gitHubClient.Repository.Content.CreateFile(
-                    owner,
-                    repoName,
-                    filePath,
-                    new CreateFileRequest($"Creating config {filePath}", content, branch)
-                    );
-            }            
         }
 
         private string GetFileName()

@@ -4,6 +4,7 @@
 @inherits FeedbackComponent<CodeDrawerContent, string>
 @inject IJSRuntime JS
 @inject DeployGrpcService _deployService
+@inject GithubGrpService _githubService
 @inject IMessageService _message
 
 <Affix TargetSelector=".ant-drawer-body" OnChange="HandleAffixChange">
