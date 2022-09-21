@@ -14,11 +14,12 @@ namespace AzureDesignStudio.Services
             _githubClient = _clientFactory.CreateClient<Github.GithubClient>("GithubClientWithAuth");
         }
 
-        public async Task<UploadGithubResponse> UploadContent(string repositoryName, string filePath, string content)
+        public async Task<UploadGithubResponse> UploadContent(string repositoryName, string branchName, string filePath, string content)
         {
             var uploadContent = new UploadGithubRequest
             {
                 RepositoryName = repositoryName,
+                BranchName = branchName,
                 FilePath = filePath,
                 Content = content
             };
@@ -52,6 +53,26 @@ namespace AzureDesignStudio.Services
             catch (Exception)
             {
                 return new GetRepositoriesResponse { StatusCode = 500 };
+            }
+        }
+
+        public async Task<GetBranchesResponse> GetBranches(long repoId)
+        {
+            var branchRequest = new GetBranchesRequest
+            {
+                RepositoryId = repoId
+            };
+
+            try
+            {
+                var response = await _githubClient.GetBranchesAsync(branchRequest);
+                response.StatusCode = 200;
+
+                return response;
+            }
+            catch (Exception)
+            {
+                return new GetBranchesResponse { StatusCode = 500 };
             }
         }
     }

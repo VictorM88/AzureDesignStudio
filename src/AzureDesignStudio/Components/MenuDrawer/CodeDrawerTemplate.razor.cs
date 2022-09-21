@@ -34,6 +34,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private AuthenticationState _authState;
         private Button UploadToGitButton;
         private List<GithubRepository> _githubRepositories;
+        private List<string> _githubBranchNames = new List<string>();
         private UploadToGithubModel _uploadToGithubModel = new UploadToGithubModel();
 
         #region Button style and download
@@ -119,7 +120,12 @@ namespace AzureDesignStudio.Components.MenuDrawer
             _message.Info("Uploading to GitHub");
 
             var selectedSepository = _githubRepositories.First(r => r.Id == _uploadToGithubModel.RepositoryId);
-            var response = await _githubService.UploadContent(selectedSepository.Name, $"configs/{GetFileName()}", _drawerContent.Content).ConfigureAwait(false);
+            var response = await _githubService.UploadContent(
+                selectedSepository.Name,
+                _uploadToGithubModel.BranchName,
+                $"configs/{GetFileName()}",
+                _drawerContent.Content
+                ).ConfigureAwait(false);
 
             if (response.StatusCode == 200)
                 _message.Info("Upload complete");
@@ -137,6 +143,12 @@ namespace AzureDesignStudio.Components.MenuDrawer
                 CodeDrawerContentType.Bicep => "azure-design-studio.bicep",
                 _ => "azure-design-studio.json"
             };
+        }
+
+        private async Task OnSelectedRepositoryChangedHandler(long repoId)
+        {
+            var branches = await _githubService.GetBranches(repoId).ConfigureAwait(false);
+            _githubBranchNames = branches.Branch.ToList();
         }
 
         #endregion

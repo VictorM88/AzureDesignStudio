@@ -36,7 +36,8 @@
             <Select @bind-Value="@context.RepositoryId"
                     Placeholder="Please select" 
                     TItem="long"
-                    TItemValue="long">
+                    TItemValue="long"
+                    OnSelectedItemChanged="OnSelectedRepositoryChangedHandler">                
                 <SelectOptions>
                     @foreach (var repository in _githubRepositories)
                     {
@@ -44,7 +45,20 @@
                     }                    
                 </SelectOptions>
             </Select>
-        </FormItem>                   
+        </FormItem>        
+         <FormItem Label="Branch">
+            <Select @bind-Value="@context.BranchName"
+                    Placeholder="Please select" 
+                    TItem="string"
+                    TItemValue="string">                
+                <SelectOptions>
+                    @foreach (var branch in _githubBranchNames)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value=@branch Label=@branch />
+                    }                    
+                </SelectOptions>
+            </Select>
+        </FormItem>        
     </Form>
 </Modal>
 

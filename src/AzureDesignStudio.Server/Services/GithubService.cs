@@ -24,11 +24,11 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<UploadGithubResponse> Upload(UploadGithubRequest request, ServerCallContext context)
         {
-            var (owner, branch) = ("VictorM88", "main");
+            var owner = "VictorM88";
 
             try
             {
-                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, request.RepositoryName, request.FilePath, branch);
+                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, request.RepositoryName, request.FilePath, request.BranchName);
                 await gitHubClient.Repository.Content.UpdateFile(
                     owner,
                     request.RepositoryName,
@@ -42,7 +42,7 @@ namespace AzureDesignStudio.Server.Services
                     owner,
                     request.RepositoryName,
                     request.FilePath,
-                    new CreateFileRequest($"Creating config {request.FilePath}", request.Content, branch)
+                    new CreateFileRequest($"Creating config {request.FilePath}", request.Content, request.BranchName)
                     ).ConfigureAwait(false);
             }
             catch (Exception)
