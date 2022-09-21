@@ -24,33 +24,57 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<UploadGithubResponse> Upload(UploadGithubRequest request, ServerCallContext context)
         {
-            var (owner, repoName, branch) = ("VictorM88", "Testing", "main");
+            var (owner, branch) = ("VictorM88", "main");
 
             try
             {
-                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, repoName, request.FilePath, branch);
+                var fileDetails = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, request.RepositoryName, request.FilePath, branch);
                 await gitHubClient.Repository.Content.UpdateFile(
                     owner,
-                    repoName,
+                    request.RepositoryName,
                     request.FilePath,
                     new UpdateFileRequest($"Updating config {request.FilePath}", request.Content, fileDetails.Last().Sha)
-                    );
+                    ).ConfigureAwait(false);
             }
             catch (NotFoundException)
             {
                 await gitHubClient.Repository.Content.CreateFile(
                     owner,
-                    repoName,
+                    request.RepositoryName,
                     request.FilePath,
                     new CreateFileRequest($"Creating config {request.FilePath}", request.Content, branch)
-                    );
+                    ).ConfigureAwait(false);
             }
             catch (Exception)
             {
-                return new UploadGithubResponse { Succeeded = false };
+                return new UploadGithubResponse { StatusCode = 500 };
             }
 
-            return new UploadGithubResponse { Succeeded = true };
+            return new UploadGithubResponse { StatusCode = 200 };
+        }
+
+        public override async Task<GetRepositoriesResponse> GetRepositories(GetRepositoriesRequest request, ServerCallContext context)
+        {
+            var response = new GetRepositoriesResponse();
+            var repositories = await gitHubClient.Repository.GetAllForCurrent().ConfigureAwait(false);
+
+            response.Repository.AddRange(repositories.Select(r => new GithubRepository
+            {
+                Id = r.Id,
+                Name = r.Name,
+            }).ToList());
+
+            return response;
+        }
+
+        public override async Task<GetBranchesResponse> GetBranches(GetBranchesRequest request, ServerCallContext context)
+        {
+            var response = new GetBranchesResponse();
+            var branches = await gitHubClient.Repository.Branch.GetAll(request.RepositoryId).ConfigureAwait(false);
+
+            response.Branch.AddRange(branches.Select(r => r.Name).ToList());
+
+            return response;
         }
     }
 }

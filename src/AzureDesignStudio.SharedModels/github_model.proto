@@ -5,14 +5,40 @@ option csharp_namespace = "AzureDesignStudio.SharedModels.Protos";
 import "google/protobuf/empty.proto";
 
 service Github {
-	rpc Upload(UploadGithubRequest) returns(UploadGithubResponse);;	
-}
-
-message UploadGithubResponse {
-	bool succeeded = 1;
+	rpc Upload(UploadGithubRequest) returns(UploadGithubResponse);
+	rpc GetRepositories(GetRepositoriesRequest) returns(GetRepositoriesResponse);
+	rpc GetBranches(GetBranchesRequest) returns(GetBranchesResponse);
 }
 
 message UploadGithubRequest {
-	string filePath = 1;
-	string content = 2;	
+	string repository_name = 1;
+	string file_path = 2;
+	string content = 3;	
+}
+
+message UploadGithubResponse {
+	int32 status_code = 1;
+}
+
+message GetRepositoriesRequest {
+}
+
+message GetRepositoriesResponse {
+	int32 status_code = 1;
+	repeated GithubRepository repository = 2;	
+}
+
+message GetBranchesRequest {
+	int64 repository_id = 1;
+}
+
+message GetBranchesResponse {
+	int32 status_code = 1;
+	repeated string branch = 2;	
+}
+
+
+message GithubRepository {
+	int64 id = 1;
+	string name = 2;	
 }

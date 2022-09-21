@@ -14,17 +14,45 @@ namespace AzureDesignStudio.Services
             _githubClient = _clientFactory.CreateClient<Github.GithubClient>("GithubClientWithAuth");
         }
 
-        public async Task<bool> UploadContent(string filePath, string content)
+        public async Task<UploadGithubResponse> UploadContent(string repositoryName, string filePath, string content)
         {
             var uploadContent = new UploadGithubRequest
             {
+                RepositoryName = repositoryName,
                 FilePath = filePath,
                 Content = content
             };
 
-            var response = await _githubClient.UploadAsync(uploadContent);
+            try
+            {
+                var response = await _githubClient.UploadAsync(uploadContent);
+                response.StatusCode = 200;
 
-            return response.Succeeded;
+                return response;
+
+            }
+            catch (Exception)
+            {
+                return new UploadGithubResponse { StatusCode = 500 };
+
+            }
+        }
+
+        public async Task<GetRepositoriesResponse> GetRepositories()
+        {
+            var repositoriesRequest = new GetRepositoriesRequest();
+
+            try
+            {
+                var response = await _githubClient.GetRepositoriesAsync(repositoriesRequest);
+                response.StatusCode = 200;
+
+                return response;
+            }
+            catch (Exception)
+            {
+                return new GetRepositoriesResponse { StatusCode = 500 };
+            }
         }
     }
 }

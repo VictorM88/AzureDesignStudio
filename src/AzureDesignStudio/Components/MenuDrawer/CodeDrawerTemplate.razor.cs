@@ -29,11 +29,12 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private IList<string> _resourceGroupNames = null!;
         private bool _paramFormLoading = true;
         private bool _showDeployStatus = false;
+        private bool _showUploadToGithubModal = false;
         private StepsStatus _stepsStatus = new();
         private AuthenticationState _authState;
         private Button UploadToGitButton;
-
-
+        private List<GithubRepository> _githubRepositories;
+        private UploadToGithubModel _uploadToGithubModel = new UploadToGithubModel();
 
         #region Button style and download
         protected override async Task OnInitializedAsync()
@@ -99,12 +100,28 @@ namespace AzureDesignStudio.Components.MenuDrawer
 
         async Task HandleUpload()
         {
+            var repos = await _githubService.GetRepositories().ConfigureAwait(false);
+            _githubRepositories = repos.Repository.ToList();
+            _showUploadToGithubModal = true;
+        }
+
+        async Task HandleUploadCancel()
+        {
+            _showUploadToGithubModal = false;
+        }
+
+
+        async Task HandleUploadToGithub()
+        {
             UploadToGitButton.Disabled = true;
+            _showUploadToGithubModal = false;
+
             _message.Info("Uploading to GitHub");
 
-            var succeeded = await _githubService.UploadContent($"configs/{GetFileName()}", _drawerContent.Content).ConfigureAwait(false);
+            var selectedSepository = _githubRepositories.First(r => r.Id == _uploadToGithubModel.RepositoryId);
+            var response = await _githubService.UploadContent(selectedSepository.Name, $"configs/{GetFileName()}", _drawerContent.Content).ConfigureAwait(false);
 
-            if (succeeded)
+            if (response.StatusCode == 200)
                 _message.Info("Upload complete");
             else
                 _message.Error("Something went wrong. Try again.");
