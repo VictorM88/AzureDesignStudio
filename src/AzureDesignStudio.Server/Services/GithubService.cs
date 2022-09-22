@@ -46,8 +46,9 @@ namespace AzureDesignStudio.Server.Services
                     new CreateFileRequest($"Creating config {request.FilePath}", request.Content, request.BranchName)
                     ).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "Uploading failed");
                 return new UploadGithubResponse { StatusCode = 500 };
             }
 
@@ -74,6 +75,23 @@ namespace AzureDesignStudio.Server.Services
             var branches = await gitHubClient.Repository.Branch.GetAll(request.RepositoryId).ConfigureAwait(false);
 
             response.Branch.AddRange(branches.Select(r => r.Name).ToList());
+
+            return response;
+        }
+
+        public override async Task<GetBranchDirectoriesResponse> GetBranchDirectories(GetBranchDirectoriesRequest request, ServerCallContext context)
+        {
+            var response = new GetBranchDirectoriesResponse();
+
+            var repoContent = await gitHubClient.Git.Tree.GetRecursive(request.RepositoryId, request.BranchName).ConfigureAwait(false);
+
+            foreach (var treeItem in repoContent.Tree)
+            {
+                if (treeItem.Type != TreeType.Tree)
+                    continue;
+
+                response.Direcotry.Add(treeItem.Path);
+            }
 
             return response;
         }

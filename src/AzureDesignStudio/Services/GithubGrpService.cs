@@ -75,5 +75,26 @@ namespace AzureDesignStudio.Services
                 return new GetBranchesResponse { StatusCode = 500 };
             }
         }
+
+        public async Task<GetBranchDirectoriesResponse> GetBranchDirectories(long repoId, string branchName)
+        {
+            var branchDirectoriesRequest = new GetBranchDirectoriesRequest
+            {
+                RepositoryId = repoId,
+                BranchName = branchName
+            };
+
+            try
+            {
+                var response = await _githubClient.GetBranchDirectoriesAsync(branchDirectoriesRequest);
+                response.StatusCode = 200;
+
+                return response;
+            }
+            catch (Exception)
+            {
+                return new GetBranchDirectoriesResponse { StatusCode = 500 };
+            }
+        }
     }
 }

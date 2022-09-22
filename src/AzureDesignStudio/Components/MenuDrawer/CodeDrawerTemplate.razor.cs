@@ -33,9 +33,11 @@ namespace AzureDesignStudio.Components.MenuDrawer
         private StepsStatus _stepsStatus = new();
         private AuthenticationState _authState;
         private Button UploadToGitButton;
-        private List<GithubRepository> _githubRepositories;
+        private Form<UploadToGithubModel> _uploadToGithubForm;
+        private List<GithubRepository> _githubRepositories = new List<GithubRepository>();
         private List<string> _githubBranchNames = new List<string>();
-        private UploadToGithubModel _uploadToGithubModel = new UploadToGithubModel();
+        private List<string> _githubBranchDirectories = new List<string>();
+        private UploadToGithubModel _uploadToGithubModel = new UploadToGithubModel { FileName = "azure-design-studio" };
 
         #region Button style and download
         protected override async Task OnInitializedAsync()
@@ -48,9 +50,10 @@ namespace AzureDesignStudio.Components.MenuDrawer
                 _ => "line-numbers language-json"
             };
 
+            _authState = await authenticationStateTask;
+
             if (_drawerContent.Type == CodeDrawerContentType.Json)
             {
-                _authState = await authenticationStateTask;
                 var user = _authState.User;
                 if (user.Identity?.IsAuthenticated ?? false)
                 {
@@ -87,7 +90,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
 
         async Task HandleDownload()
         {
-            await DownloadFileAsync(_drawerContent.Content, GetFileName(), "application/json");
+            await DownloadFileAsync(_drawerContent.Content, $"{_uploadToGithubModel.FileName}{GetFileExtension()}", "application/json");
         }
 
         // According to: https://docs.microsoft.com/en-us/aspnet/core/blazor/file-downloads?view=aspnetcore-6.0
@@ -114,6 +117,9 @@ namespace AzureDesignStudio.Components.MenuDrawer
 
         async Task HandleUploadToGithub()
         {
+            if (!_uploadToGithubForm.Validate())
+                return;
+
             UploadToGitButton.Disabled = true;
             _showUploadToGithubModal = false;
 
@@ -123,7 +129,7 @@ namespace AzureDesignStudio.Components.MenuDrawer
             var response = await _githubService.UploadContent(
                 selectedSepository.Name,
                 _uploadToGithubModel.BranchName,
-                $"configs/{GetFileName()}",
+                $"{_uploadToGithubModel.DirectoryPath}/{_uploadToGithubModel.FileName}{GetFileExtension()}",
                 _drawerContent.Content
                 ).ConfigureAwait(false);
 
@@ -135,13 +141,13 @@ namespace AzureDesignStudio.Components.MenuDrawer
             UploadToGitButton.Disabled = false;
         }
 
-        private string GetFileName()
+        private string GetFileExtension()
         {
             return _drawerContent.Type switch
             {
-                CodeDrawerContentType.Json => "azure-design-studio.json",
-                CodeDrawerContentType.Bicep => "azure-design-studio.bicep",
-                _ => "azure-design-studio.json"
+                CodeDrawerContentType.Json => ".json",
+                CodeDrawerContentType.Bicep => ".bicep",
+                _ => ".json"
             };
         }
 
@@ -149,6 +155,12 @@ namespace AzureDesignStudio.Components.MenuDrawer
         {
             var branches = await _githubService.GetBranches(repoId).ConfigureAwait(false);
             _githubBranchNames = branches.Branch.ToList();
+        }
+
+        private async Task OnSelectedBranchChangedHandler(string branchName)
+        {
+            var directories = await _githubService.GetBranchDirectories(_uploadToGithubModel.RepositoryId, branchName).ConfigureAwait(false);
+            _githubBranchDirectories = directories.Direcotry.ToList();
         }
 
         #endregion

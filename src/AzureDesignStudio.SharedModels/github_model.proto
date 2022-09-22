@@ -8,6 +8,7 @@ service Github {
 	rpc Upload(UploadGithubRequest) returns(UploadGithubResponse);
 	rpc GetRepositories(GetRepositoriesRequest) returns(GetRepositoriesResponse);
 	rpc GetBranches(GetBranchesRequest) returns(GetBranchesResponse);
+	rpc GetBranchDirectories(GetBranchDirectoriesRequest) returns(GetBranchDirectoriesResponse);
 }
 
 message UploadGithubRequest {
@@ -36,6 +37,16 @@ message GetBranchesRequest {
 message GetBranchesResponse {
 	int32 status_code = 1;
 	repeated string branch = 2;	
+}
+
+message GetBranchDirectoriesRequest {
+	int64 repository_id = 1;
+	string branch_name = 2;
+}
+
+message GetBranchDirectoriesResponse {
+	int32 status_code = 1;
+	repeated string direcotry = 2;	
 }
 
 
