@@ -1,0 +1,28 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "AzureDesignStudio.SharedModels.Protos";
+
+import "google/protobuf/empty.proto";
+
+service UserSettings {
+	rpc AddOrUpdateUserSetting(AddOrUpdateUserSettingRequest) returns(AddOrUpdateUserSettingResponse);
+	rpc GetUserSetting(GetUserSettingRequest) returns(GetUserSettingResponse);
+}
+
+message AddOrUpdateUserSettingRequest {
+	int32 type = 1;
+	string value = 2;
+}
+
+message AddOrUpdateUserSettingResponse {
+	int32 status_code = 1;
+}
+
+message GetUserSettingRequest {
+	int32 type = 1;	
+}
+
+message GetUserSettingResponse {
+	int32 status_code = 1;
+	string value = 2;
+}

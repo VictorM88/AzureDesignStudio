@@ -1,11 +1,15 @@
-﻿@using AzureDesignStudio.Services
+﻿@using AzureDesignStudio.Models
+@using AzureDesignStudio.Services
 @using AzureDesignStudio.SharedModels.Protos
+@using AzureDesignStudio.SharedModels.User
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @inherits FeedbackComponent<string, string>
 @inject NavigationManager _navManager
 @inject SignOutSessionStateManager _signOutManager
 @inject DrawerService _drawerService
 @inject DeployGrpcService _deployService
+@inject UserSettingsGrpService userSettingsService
+@inject IMessageService message
 
 <AuthorizeView>
     <Authorized>
@@ -15,20 +19,32 @@
                 <Col Span="6"><Button OnClick="BeginLogout">Log out</Button></Col>
             </Row>
             <Divider />
+            <Spin Spinning="@(!_userSettingsLoaded)">
+                <Form @ref="@_userSettingsForm" Model="@_userSettingsModel" Context="formContext" ValidateMode="@FormValidateMode.Complex"
+                      LabelColSpan="24" WrapperColSpan="24">
+                    <FormItem Label="GitHub PAT">
+                        <Input @bind-Value="@formContext.GithubPat" />
+                    </FormItem>
+                </Form>
+            </Spin>
+            <br />
+            <br />
+            <Button Type="primary" OnClick="HandleUpdateUserSettingsClick">Save</Button>
+            <Divider />
             <Spin Spinning="@_spinning">
-        @if(_showLinkSubscription)
-        {
-            <AntList Bordered DataSource="@_linkedSubscriptions" Size="small">
-                <Header><b>Your linked subscriptions</b></Header>
-                <ChildContent Context="item">
-                    <ListItem>@item.SubscriptionName</ListItem>
-                </ChildContent>
-            </AntList>
-        }
-        else
-        {
-            <Button OnClick="LinkAzureSubscription">Link Azure Subscription</Button>
-        }
+                @if (_showLinkSubscription)
+                {
+                    <AntList Bordered DataSource="@_linkedSubscriptions" Size="small">
+                        <Header><b>Your linked subscriptions</b></Header>
+                        <ChildContent Context="item">
+                            <ListItem>@item.SubscriptionName</ListItem>
+                        </ChildContent>
+                    </AntList>
+                }
+                else
+                {
+                    <Button OnClick="LinkAzureSubscription">Link Azure Subscription</Button>
+                }
             </Spin>
         </div>
     </Authorized>
@@ -44,8 +60,11 @@
     private Task<AuthenticationState> authenticationStateTask { get; set; } = null!;
 
     private bool _spinning = true;
+    private bool _userSettingsLoaded = false;
     private bool _showLinkSubscription = false;
     private IList<SubscriptionRes>? _linkedSubscriptions = null;
+    private Form<UserSettingsModel> _userSettingsForm;
+    private UserSettingsModel _userSettingsModel = new UserSettingsModel();
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,6 +72,9 @@
         var user = authState.User;
         if (user.Identity?.IsAuthenticated ?? false)
         {
+            _userSettingsModel.GithubPat = await GetUserSettingAsync(UserSettingType.GithubPat);
+            _userSettingsLoaded = true;
+
             await GetSubscriptionNames();
         }
         _spinning = false;
@@ -125,5 +147,35 @@
             _spinning = false;
             await InvokeAsync(StateHasChanged);
         };
+    }
+
+    async void HandleUpdateUserSettingsClick()
+    {
+        if (!_userSettingsForm.Validate())
+            return;
+
+        message.Info("Updating user settings");
+
+        var response = await userSettingsService.AddOrUpdateUserSetting(UserSettingType.GithubPat, _userSettingsModel.GithubPat);
+        if (response.StatusCode == 200)
+        {
+            message.Info("User settings updated");
+        }
+        else
+        {
+            message.Error("Something went wrong. Try again.");
+        }
+    }
+
+    async Task<string> GetUserSettingAsync(UserSettingType userSettingType)
+    {
+        var response = await userSettingsService.GetUserSetting(userSettingType);
+
+        if (response.StatusCode == 200)
+        {
+            return response.Value;
+        }
+
+        return "";
     }
 }

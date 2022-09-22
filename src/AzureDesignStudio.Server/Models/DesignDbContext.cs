@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AzureDesignStudio.SharedModels.User;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace AzureDesignStudio.Server.Models
@@ -17,6 +18,7 @@ namespace AzureDesignStudio.Server.Models
 
         public DbSet<DesignModel> AdsDesigns { get; set; } = null!;
         public DbSet<AzureSubscriptionModel> AzureSubscriptions { get; set; } = null!;
+        public DbSet<UserSettingModel> UserSettings { get; set; } = null!;
     }
 
     public record DesignModel
@@ -39,5 +41,13 @@ namespace AzureDesignStudio.Server.Models
         public Guid TenantId { get; set; }
         public Guid ClientId { get; set; }
         public string ClientSecret { get; set; } = null!;
+    }
+
+    public record UserSettingModel
+    {
+        public int Id { get; set; }
+        public Guid UserId { get; set; }
+        public UserSettingType Type { get; set; }
+        public string Value { get; set; }
     }
 }

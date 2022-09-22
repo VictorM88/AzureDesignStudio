@@ -87,6 +87,7 @@ app.UseGrpcWeb();
 app.MapGrpcService<DesignService>().EnableGrpcWeb();
 app.MapGrpcService<DeployService>().EnableGrpcWeb();
 app.MapGrpcService<GithubService>().EnableGrpcWeb();
+app.MapGrpcService<UserSettingsService>().EnableGrpcWeb();
 IdentityModelEventSource.ShowPII = true;
 #if DEBUG
 if (app.Environment.IsDevelopment())

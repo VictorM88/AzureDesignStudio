@@ -1,6 +1,8 @@
-﻿using AzureDesignStudio.SharedModels.Protos;
+﻿using AzureDesignStudio.Server.Models;
+using AzureDesignStudio.SharedModels.Protos;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web.Resource;
 using Octokit;
 
@@ -10,20 +12,22 @@ namespace AzureDesignStudio.Server.Services
     [RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes")]
     public class GithubService : Github.GithubBase
     {
-        private readonly IConfiguration configuration;
+        private readonly DesignDbContext designContext;
         private readonly ILogger<GithubService> logger;
         private readonly GitHubClient gitHubClient;
 
-        public GithubService(IConfiguration configuration, ILogger<GithubService> logger)
+        public GithubService(DesignDbContext context, ILogger<GithubService> logger)
         {
-            this.configuration = configuration;
             this.logger = logger;
             gitHubClient = new GitHubClient(new ProductHeaderValue("AzureDesignStudio"));
-            gitHubClient.Credentials = new Credentials(configuration["GithubPAT"]);
+
+            designContext = context;
+            designContext.Database.EnsureCreated();            
         }
 
         public override async Task<UploadGithubResponse> Upload(UploadGithubRequest request, ServerCallContext context)
         {
+            await SetGithubClientCredentialsAsync(context).ConfigureAwait(false);
             var githubUser = await gitHubClient.User.Current().ConfigureAwait(false);
             var owner = githubUser.Login;
 
@@ -57,6 +61,8 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<GetRepositoriesResponse> GetRepositories(GetRepositoriesRequest request, ServerCallContext context)
         {
+            await SetGithubClientCredentialsAsync(context).ConfigureAwait(false);
+
             var response = new GetRepositoriesResponse();
             var repositories = await gitHubClient.Repository.GetAllForCurrent().ConfigureAwait(false);
 
@@ -71,6 +77,8 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<GetBranchesResponse> GetBranches(GetBranchesRequest request, ServerCallContext context)
         {
+            await SetGithubClientCredentialsAsync(context).ConfigureAwait(false);
+
             var response = new GetBranchesResponse();
             var branches = await gitHubClient.Repository.Branch.GetAll(request.RepositoryId).ConfigureAwait(false);
 
@@ -81,8 +89,9 @@ namespace AzureDesignStudio.Server.Services
 
         public override async Task<GetBranchDirectoriesResponse> GetBranchDirectories(GetBranchDirectoriesRequest request, ServerCallContext context)
         {
-            var response = new GetBranchDirectoriesResponse();
+            await SetGithubClientCredentialsAsync(context).ConfigureAwait(false);
 
+            var response = new GetBranchDirectoriesResponse();
             var repoContent = await gitHubClient.Git.Tree.GetRecursive(request.RepositoryId, request.BranchName).ConfigureAwait(false);
 
             foreach (var treeItem in repoContent.Tree)
@@ -94,6 +103,22 @@ namespace AzureDesignStudio.Server.Services
             }
 
             return response;
+        }
+
+        private async Task SetGithubClientCredentialsAsync(ServerCallContext context)
+        {
+            var userIdClaim = ServiceTools.GetUserId(context);
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+            {
+                return;
+            }
+            var userId = new Guid(userIdClaim);
+
+            var githubPatSetting = await designContext.UserSettings.FirstOrDefaultAsync(us => us.Type == SharedModels.User.UserSettingType.GithubPat && us.UserId == userId).ConfigureAwait(false);
+            if (githubPatSetting != null)
+            {
+                gitHubClient.Credentials = new Credentials(githubPatSetting.Value);
+            }
         }
     }
 }
