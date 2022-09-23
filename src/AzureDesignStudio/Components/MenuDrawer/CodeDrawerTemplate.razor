@@ -34,6 +34,7 @@
             <Alert Type="@AlertType.Warning"
                Message="Make sure you have set the GitHub PAT and you have access to at least one repository."
                ShowIcon="true"/>
+               <br />
     }
     <Form @ref="@_uploadToGithubForm"
           Model="@_uploadToGithubModel"
@@ -54,6 +55,7 @@
                 </SelectOptions>
             </Select>
         </FormItem>
+        <br />
         <FormItem Label="Branch">
             <Select DataSource="@_githubBranchNames"
                     @bind-Value="@context.BranchName"
@@ -64,6 +66,7 @@
                     OnSelectedItemChanged="OnSelectedBranchChangedHandler">
             </Select>
         </FormItem>
+        <br />
         <FormItem Label="Directory">
             <Select DataSource="@_githubBranchDirectories"
                     @bind-Value="@context.DirectoryPath"
@@ -73,6 +76,7 @@
                     TItemValue="string">
             </Select>
         </FormItem>
+        <br />
         <FormItem Label="File name">
             <AntDesign.Input TValue="string" @bind-Value=@context.FileName>
                 <AddOnAfter>@GetFileExtension()</AddOnAfter>
